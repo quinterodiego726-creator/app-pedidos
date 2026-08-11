@@ -6,6 +6,7 @@ class Producto {
   final int precio;
   final String descripcion;
   final IconData icono;
+  final String categoria;
 
   Producto({
     required this.id,
@@ -13,5 +14,6 @@ class Producto {
     required this.precio,
     required this.descripcion,
     required this.icono,
+    required this.categoria,
   });
 }
