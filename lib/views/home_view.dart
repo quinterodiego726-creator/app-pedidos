@@ -195,7 +195,7 @@ class _HomeViewState extends State<HomeView> {
           actions: [
             ElevatedButton(
               onPressed: () {
-                setState(() {
+               setState(() {
                   pasoEstadoPedido = 1; // Inicia el rastreo
                   widget.onLimpiarCarrito();
                 });
