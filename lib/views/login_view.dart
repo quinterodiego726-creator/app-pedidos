@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/views/registro_view.dart';
-import 'package:flutter_application_1/views/recuperar_password_view.dart'; // <--- Importamos la nueva vista
+import 'package:flutter_application_1/services/database_helper.dart';
 
 class LoginView extends StatefulWidget {
   final VoidCallback onLoginExitoso;
+  final VoidCallback irARegistro;
 
-  const LoginView({super.key, required this.onLoginExitoso});
+  const LoginView({
+    super.key,
+    required this.onLoginExitoso,
+    required this.irARegistro,
+  });
 
   @override
   State<LoginView> createState() => _LoginViewState();
@@ -16,15 +20,27 @@ class _LoginViewState extends State<LoginView> {
   final _correoController = TextEditingController();
   final _passController = TextEditingController();
 
-  void _iniciarSesion() {
+  Future<void> _iniciarSesion() async {
+    // 1. Ejecutar validaciones del Formulario (Form)
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('¡Inicio de sesión exitoso!'),
-          backgroundColor: Colors.green,
-        ),
+      // 2. Validar credenciales contra la tabla usuarios en SQLite
+      final esValido = await DatabaseHelper.instance.loginUsuario(
+        _correoController.text,
+        _passController.text,
       );
-      widget.onLoginExitoso();
+
+      if (!mounted) return;
+
+      if (esValido) {
+        widget.onLoginExitoso();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Correo o contraseña incorrectos'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -66,8 +82,11 @@ class _LoginViewState extends State<LoginView> {
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Ingresa tu correo';
+                  }
+                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
+                    return 'Ingresa un correo válido';
                   }
                   return null;
                 },
@@ -88,24 +107,7 @@ class _LoginViewState extends State<LoginView> {
                   return null;
                 },
               ),
-
-              // --- BOTÓN DE RECUPERAR CONTRASEÑA AGREGADO AQUÍ ---
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RecuperarPasswordView(),
-                      ),
-                    );
-                  },
-                  child: const Text('¿Olvidaste tu contraseña?'),
-                ),
-              ),
-              const SizedBox(height: 10),
-
+              const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _iniciarSesion,
                 style: ElevatedButton.styleFrom(
@@ -113,20 +115,9 @@ class _LoginViewState extends State<LoginView> {
                 ),
                 child: const Text('Ingresar', style: TextStyle(fontSize: 16)),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => RegistroView(
-                        onRegistroExitoso: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ),
-                  );
-                },
+                onPressed: widget.irARegistro,
                 child: const Text('¿No tienes cuenta? Regístrate aquí'),
               ),
             ],

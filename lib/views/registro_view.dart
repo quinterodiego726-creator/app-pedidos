@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/services/database_helper.dart';
 
 class RegistroView extends StatefulWidget {
   final VoidCallback onRegistroExitoso;
@@ -15,16 +16,32 @@ class _RegistroViewState extends State<RegistroView> {
   final _passController = TextEditingController();
   final _confirmPassController = TextEditingController();
 
-  void _registrarUsuario() {
+  Future<void> _registrarUsuario() async {
     if (_formKey.currentState!.validate()) {
-      // Aquí se integraría la lógica de backend (ej: Firebase Auth)
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('¡Cuenta creada con éxito!'),
-          backgroundColor: Colors.green,
-        ),
+      // Uso correcto de Singleton (.instance)
+      final exito = await DatabaseHelper.instance.registrarUsuario(
+        _correoController.text.trim(),
+        _passController.text.trim(),
       );
-      widget.onRegistroExitoso();
+
+      if (!mounted) return;
+
+      if (exito) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Cuenta creada con éxito!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        widget.onRegistroExitoso();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Este correo ya está registrado'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -67,11 +84,11 @@ class _RegistroViewState extends State<RegistroView> {
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Ingresa un correo';
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Ingresa un correo electrónico';
                   }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                    return 'Ingresa un correo válido';
+                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
+                    return 'Ingresa un correo válido (ej: usuario@mail.com)';
                   }
                   return null;
                 },
@@ -105,6 +122,9 @@ class _RegistroViewState extends State<RegistroView> {
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Confirma tu contraseña';
+                  }
                   if (value != _passController.text) {
                     return 'Las contraseñas no coinciden';
                   }

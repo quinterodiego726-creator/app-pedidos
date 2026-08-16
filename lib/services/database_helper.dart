@@ -34,13 +34,24 @@ class DatabaseHelper {
 
     final db = await openDatabase(path);
 
+    // Crear la tabla de usuarios en caso de que no exista en la base de datos precompilada
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        correo TEXT UNIQUE,
+        password TEXT
+      )
+    ''');
+
     // IMPRIME EL CONTENIDO AUTOMÁTICAMENTE AL ABRIR LA BASE DE DATOS
     try {
       final productos = await db.query('productos');
       final carrito = await db.query('carrito');
+      final usuarios = await db.query('usuarios');
       debugPrint('==============================================');
       debugPrint('🚀 TABLA PRODUCTOS EN DB: $productos');
       debugPrint('🛒 TABLA CARRITO EN DB: $carrito');
+      debugPrint('👤 TABLA USUARIOS EN DB: $usuarios');
       debugPrint('==============================================');
     } catch (e) {
       debugPrint('⚠️ Error al leer tablas al iniciar: $e');
@@ -49,28 +60,53 @@ class DatabaseHelper {
     return db;
   }
 
-  // --- MÉTODOS DE CONSULTA ---
+  // --- MÉTODOS DE AUTENTICACIÓN Y USUARIOS ---
 
-  // 1. Insertar un producto al carrito
+  // Registrar nuevo usuario
+  Future<bool> registrarUsuario(String correo, String password) async {
+    final db = await instance.database;
+    try {
+      await db.insert('usuarios', {
+        'correo': correo.toLowerCase().trim(),
+        'password': password,
+      });
+      return true;
+    } catch (e) {
+      debugPrint('Error al registrar usuario (posible correo duplicado): $e');
+      return false;
+    }
+  }
+
+  // Validar inicio de sesión
+  Future<bool> loginUsuario(String correo, String password) async {
+    final db = await instance.database;
+    final res = await db.query(
+      'usuarios',
+      where: 'correo = ? AND password = ?',
+      whereArgs: [correo.toLowerCase().trim(), password],
+    );
+    return res.isNotEmpty;
+  }
+
+  // --- MÉTODOS DE CONSULTA CARRITO ---
+
   Future<int> agregarAlCarrito(Map<String, dynamic> item) async {
     final db = await instance.database;
     final id = await db.insert('carrito', item);
 
     final carritoActual = await obtenerCarrito();
     debugPrint('==============================================');
-    debugPrint('➕ CARRITO ACTUALIZADO (NUEVO ITEM): $carritoActual');
+    debugPrint('➕ CARRITO ACTUALIZADO: $carritoActual');
     debugPrint('==============================================');
 
     return id;
   }
 
-  // 2. Obtener todos los productos guardados en el carrito
   Future<List<Map<String, dynamic>>> obtenerCarrito() async {
     final db = await instance.database;
     return await db.query('carrito');
   }
 
-  // 3. Vaciar el carrito
   Future<int> limpiarCarrito() async {
     final db = await instance.database;
     final res = await db.delete('carrito');

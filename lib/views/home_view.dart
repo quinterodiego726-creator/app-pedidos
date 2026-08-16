@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_application_1/models/producto.dart';
 import 'package:flutter_application_1/models/item_carrito.dart';
 
@@ -30,29 +29,53 @@ class _HomeViewState extends State<HomeView> {
   String textoBusqueda = '';
   String metodoPagoSeleccionado = 'Efectivo / Contra Entrega';
 
-  //  Control de estado del pedido (0: Sin orden, 1: Recibido, 2: En preparación, 3: En camino, 4: Entregado)
+  // Control de estado del pedido (0: Sin orden, 1: Recibido, 2: En preparación, 3: En camino, 4: Entregado)
   int pasoEstadoPedido = 0;
 
   int get totalPedido {
     return widget.carrito.fold(0, (sum, item) => sum + item.subtotal);
   }
 
-  // : Función para lanzar chat de soporte en WhatsApp
-  Future<void> _abrirWhatsApp() async {
-    const numeroTelefono = '3206570609'; 
-    const mensaje =
-        'Hola, necesito ayuda con mi pedido en la app Pedidos Diego.';
-    final Uri url = Uri.parse(
-      'https://wa.me/$numeroTelefono?text=${Uri.encodeComponent(mensaje)}',
-    );
-
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo abrir WhatsApp')),
+  // Muestra el número celular de soporte en un diálogo
+  void _mostrarSoporte() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.headset_mic, color: Colors.green),
+              SizedBox(width: 10),
+              Text('Soporte Técnico'),
+            ],
+          ),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Si necesitas ayuda con tu pedido, contáctanos al:'),
+              SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.phone, color: Colors.green),
+                  SizedBox(width: 8),
+                  Text(
+                    '+57 320 657 0609',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cerrar'),
+            ),
+          ],
         );
-      }
-    }
+      },
+    );
   }
 
   void _procesarPago(BuildContext context) {
@@ -195,8 +218,8 @@ class _HomeViewState extends State<HomeView> {
           actions: [
             ElevatedButton(
               onPressed: () {
-               setState(() {
-                  pasoEstadoPedido = 1; // Inicia el rastreo
+                setState(() {
+                  pasoEstadoPedido = 1;
                   widget.onLimpiarCarrito();
                 });
                 Navigator.pop(context);
@@ -318,6 +341,13 @@ class _HomeViewState extends State<HomeView> {
         appBar: AppBar(
           title: const Text('Pedidos Diego'),
           backgroundColor: Theme.of(context).colorScheme.primary,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.phone),
+              tooltip: 'Soporte',
+              onPressed: _mostrarSoporte,
+            ),
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(icon: Icon(Icons.flatware), text: 'Menú'),
@@ -325,13 +355,6 @@ class _HomeViewState extends State<HomeView> {
               Tab(icon: Icon(Icons.assignment), text: 'Estado'),
             ],
           ),
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _abrirWhatsApp,
-          icon: const Icon(Icons.chat),
-          label: const Text('Soporte'),
-          backgroundColor: Colors.green,
-          foregroundColor: Colors.white,
         ),
         body: TabBarView(
           children: [
@@ -537,7 +560,7 @@ class _HomeViewState extends State<HomeView> {
                     ],
                   ),
 
-            // PESTAÑA SEGUIMIENTO DE PEDIDO (RF12)
+            // PESTAÑA SEGUIMIENTO DE PEDIDO
             pasoEstadoPedido == 0
                 ? const Center(
                     child: Column(

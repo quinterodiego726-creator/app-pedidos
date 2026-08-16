@@ -3,6 +3,7 @@ import 'package:flutter_application_1/models/producto.dart';
 import 'package:flutter_application_1/models/item_carrito.dart';
 import 'package:flutter_application_1/views/home_view.dart';
 import 'package:flutter_application_1/views/login_view.dart';
+import 'package:flutter_application_1/views/registro_view.dart'; // IMPORTACIÓN AGREGADA
 
 void main() {
   runApp(const MiAppRestaurante());
@@ -108,22 +109,38 @@ class _MiAppRestauranteState extends State<MiAppRestaurante> {
         ),
         useMaterial3: true,
       ),
-      home: estaAutenticado
-          ? HomeView(
-              catalogo: catalogo,
-              carrito: carrito,
-              onAgregar: agregarAlCarrito,
-              onCambiarCantidad: cambiarCantidad,
-              onEliminar: eliminarDelCarrito,
-              onLimpiarCarrito: limpiarCarrito,
-            )
-          : LoginView(
-              onLoginExitoso: () {
-                setState(() {
-                  estaAutenticado = true;
-                });
-              },
-            ),
+      home: Builder(
+        builder: (context) {
+          return estaAutenticado
+              ? HomeView(
+                  catalogo: catalogo,
+                  carrito: carrito,
+                  onAgregar: agregarAlCarrito,
+                  onCambiarCantidad: cambiarCantidad,
+                  onEliminar: eliminarDelCarrito,
+                  onLimpiarCarrito: limpiarCarrito,
+                )
+              : LoginView(
+                  onLoginExitoso: () {
+                    setState(() {
+                      estaAutenticado = true;
+                    });
+                  },
+                  irARegistro: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RegistroView(
+                          onRegistroExitoso: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                );
+        },
+      ),
     );
   }
 }
